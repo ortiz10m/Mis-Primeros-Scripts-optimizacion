@@ -1,22 +1,24 @@
 #!/bin/bash
-# Script: El Vigilante (Auto-Cleaner)
-# Se ejecuta en bucle y vigila la RAM cada 30 segundos.
 
-echo "👀 El Vigilante está activo..."
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
 
-while true; do
-    # 1. Medir memoria libre en MB
-        FREE=$(free -m | awk '/^Mem:/{print $7}')
+LIMITE=80
 
-                # 2. Si hay menos de 200MB libres, limpiar
-                    if [ "$FREE" -lt 200 ]; then
-                            echo "⚠️ RAM crítica ($FREE MB). Limpiando..."
-                                    sync
-                                            sudo sysctl -w vm.drop_caches=3
-                                                    sudo sysctl -w vm.compact_memory=1
-                                                            echo "✅ Limpieza lista."
-                                                                fi
+echo "-------------------------------------"
+echo "🕒 Hora de reporte: $(date)"
 
-                                                                    # 3. Esperar 30 segundos
-                                                                        sleep 30
-                                                                        done
+RAM_USADA=$(free | grep Mem | awk '{print int($3/$2 * 100)}')
+echo "🧠 RAM detectada: $RAM_USADA%"
+
+if [ $RAM_USADA -gt $LIMITE ]; then
+    echo "⚠️  ¡ALERTA! El sistema está sufriendo (Más del $LIMITE%)."
+    echo "🧹 Ejecutando limpieza de emergencia..."
+    rm -rf ~/.cache/thumbnails/*
+    notify-send "🚨 VIGILANTE ACTIVO" "RAM crítica al $RAM_USADA%. Liberando espacio..."
+    echo "✅ Limpieza completada con éxito."
+else
+    echo "✅ Todo tranquilo. Sistema estable."
+fi
+
+echo "-------------------------------------"
